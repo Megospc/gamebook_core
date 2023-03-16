@@ -64,7 +64,7 @@ function clear() {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 function load() {
-  if (options.music) {
+  if (options.music && !options.nosounds) {
     gamebook.music = new Audio(options.music);
     gamebook.music.addEventListener('loadeddata', loaded);
   } else needload--;
@@ -86,10 +86,12 @@ function load() {
   });
 }
 function sound(id) {
-  for (let i = 0; i < sounds.length; i++) {
-    if (sounds[i].id == id) {
-      sounds[i].sound.play();
-      return;
+  if (!options.nosounds) {
+    for (let i = 0; i < sounds.length; i++) {
+      if (sounds[i].id == id) {
+        sounds[i].sound.play();
+        return;
+      }
     }
   }
 }
@@ -140,6 +142,16 @@ function touchstart(e) {
   let y = ((mobile ? e.touches[0].pageY:e.pageY)-cy)/c;
   if (x > 850 && x < 870 && y > 30 && y < 420 && maxY > 450) {
     clickType = "camera";
+    return;
+  }
+  if (!printing[0] && x < 790) {
+    for (let i = 0, sy = (text.length*30)+20-cameraY; i < opts.length; i++) {
+      if (y > sy && y < sy+(opts[i].text.length*30)) {
+        opts[i].f();
+        return;
+      }
+      sy += opts[i].text.length*30;
+    }
   }
   if (x < 790 && printing[0]) {
     while (printing[0]) {
@@ -158,19 +170,14 @@ function touchstart(e) {
         cursor.x++;
       }
     }
-  }
-  if (!printing[0] && x < 790) {
-    for (let i = 0, sy = (text.length*30)+20-cameraY; i < opts.length; i++) {
-      if (y > sy && y < sy+(opts[i].text.length*30)) opts[i].f();
-      sy += opts[i].text.length*30;
-    }
+    return;
   }
   if (x > 790 && y < 20) fullScreen(document.documentElement);
 }
 function allload() {
   startrender();
   addEventListener('click', () => {
-    if (options.music) {
+    if (options.music && !options.nosounds) {
       gamebook.music.loop = true;
       gamebook.music.play();
     }
@@ -216,7 +223,7 @@ function opt(txt, fun) {
   for (let i = 0; i < txt.length; i++) {
     t.push(txt[i]);
   }
-  opts.push({ text: [new Array(textlen).fill('')], printing: t, cursor: { x: 0, y: 0 }, f: fun });
+  opts.push({ text: [new Array(optlen).fill('')], printing: t, cursor: { x: 0, y: 0 }, f: fun });
 }
 function vibrate(len) {
   if (navigator.vibrate) navigator.vibrate(len);
