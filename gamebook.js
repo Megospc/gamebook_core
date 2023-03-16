@@ -1,6 +1,6 @@
 const devices = new RegExp('Android|webOS|iPhone|iPad|iPod|BlackBerry|BB|PlayBook|IEMobile|Windows Phone|Kindle|Silk|Opera Mini', "i");
 const mobile = devices.test(navigator.userAgent);
-const textlen = 50, optlen = 40, fpsTime = 10;
+const textlen = 50, optlen = 50, fpsTime = 10;
 var gamesrc = "";
 var sounds = [];
 var cw, ch, cc, cx, cy;
@@ -9,7 +9,7 @@ var canvas = document.getElementById('canvas');
 var ctx = canvas.getContext('2d');
 var frame = 0, loading = 0, needload = 3, started = false;
 var options = obj.options, rooms = obj.rooms, assets = obj.assets ?? [], style = obj.style ?? { background: "#803000", first: "#ffc070", second: "#ff8050", third: "#502000", backgroundbody: "#502000" };
-var text = [new Array(textlen).fill('')], opts = [], printing = [], cursor = { x: 0, y: 0 }, gamebook = {}, variables = {};
+var text = [new Array(textlen).fill('')], opts = [], printing = [], cursor = { x: 0, y: 0 }, gamebook = {};
 var cameraY = 0, maxY = 450, clickType = "";
 document.getElementById('title').innerHTML = `GAMEBOOK - ${obj.name ?? "без имени"}`;
 for (let i = location.href.length-1, b = false; i >= 0; i--) {
@@ -237,6 +237,9 @@ function fullScreen(e) {
     e.mozRequestFullScreen();
   }
 }
+function var_(name, value) {
+  window[name] = value ?? null;
+}
 function render() {
   clear();
   document.body.style.backgroundColor = style.backgroundbody;
@@ -296,7 +299,6 @@ function render() {
     }
   }
   ctx.fillStyle = style.second;
-  ctx.font = `${X(24)}px font`;
   for (let i = 0, y = 0; i < opts.length; i++) {
     let opt = opts[i];
     for (let j = 0; j < opt.text.length; j++) {
