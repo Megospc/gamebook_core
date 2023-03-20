@@ -135,6 +135,10 @@ function loaded() {
 function touchend() {
   clickType = "";
 }
+function touch() {
+  touchstart();
+  touchmove();
+}
 function touchmove(e) {
   let c = cw/900;
   let x = ((mobile ? e.touches[0].pageX:e.pageX)-cx)/c;
@@ -181,6 +185,14 @@ function touchstart(e) {
   }
   if (x > 790 && y < 20) fullScreen(document.documentElement);
 }
+function wheel(e) {
+  if (maxY > 450) {
+    e = e ?? window.event;
+    let del = e.deltaY || e.detail || e.wheelDelta;
+    if (del < 0 && cameraY > 0) cameraY = Math.max(cameraY-10, 0);
+    if (del < 0 && cameraY < 0) cameraY = Math.min(cameraY+10, maxY);
+  }
+}
 function allload() {
   startrender();
   addEventListener('click', () => {
@@ -190,17 +202,30 @@ function allload() {
     }
     interval = setInterval(() => { if (performance.now() >= lastTime+fpsTime) render(); }, 1);
     if (mobile) {
-      document.addEventListener('touchend', touchend);
-      document.addEventListener('touchmove', touchmove);
-      document.addEventListener('touchstart', touchstart);
+      if ('ontouchstart' in document) {
+        eventListener('touchend', touchend);
+        eventListener('touchmove', touchmove);
+        eventListener('touchstart', touchstart);
+      } else close();
     } else {
-      document.addEventListener('mouseup', touchend);
-      document.addEventListener('mousemove', touchmove);
-      document.addEventListener('mousedown', touchstart);
+      eventListener('mouseup', touchend);
+      eventListener('mousemove', touchmove);
+      eventListener('mousedown', touchstart);
+      if (document.addEventListener) {
+        if ('onwheel' in document) document.addEventListener('wheel', wheel);
+        else {
+          if ('onmousewheel' in document) document.addEventListener('mousewheel', wheel);
+          else document.addEventListener('MozMousePixelScroll', wheel);
+        }
+      } else document.attachEvent('onmousewheel', wheel);
     }
     started = true;
     start();
   }, { once: true });
+}
+function eventListener(e, f) {
+  if (document.addEventListener) document.addEventListener(e, f);
+  else document.attachEvent(e, f);
 }
 function start() {
   options.onstart();
