@@ -75,34 +75,11 @@ function load() {
       needload++;
     }
     if (assets[i].type == "image") {
-      needload += assets[i].resolutions.length+1;
-      images.push({ img: new Image(), arr: [], res: assets[i].resolutions, id: assets[i].id });
+      needload++;
+      images.push({ img: new Image(), id: assets[i].id });
       images[images.length-1].img.src = assets[i].src;
       images[images.length-1].img.obj = images[images.length-1];
-      images[images.length-1].img.onload = function() {
-        let e = document.createElement('canvas');
-        let c = e.getContext('2d');
-        e.width = this.width;
-        e.height = this.height;
-        this.crossOrigin = "Anonymous";
-        c.drawImage(this, 0, 0);
-        let data = c.getImageData(0, 0, e.width, e.height);
-        let d = new Uint32Array(data.data);
-        loaded();
-        for (let i = 0; i < this.obj.res.length; i++) {
-          let res = { width: X(this.obj.res[i].width), height: Y(this.obj.res[i].height) };
-          let img = new ImageData(res.width, res.height);
-          let dat = new Uint32Array(img.data);
-          for (let y = 0; y < res.height; y++) {
-            for (let x = 0; x < res.width; x++) {
-              let j = Math.floor(y/res.height*this.height)*res.width+Math.floor(x/res.width*res.width);
-              dat[y*res.width+x] = d[j];
-            }
-          }
-          this.obj.arr[i] = img;
-          loaded();
-        }
-      };
+      images[images.length-1].img.onload = loaded;
     }
   }
   gamebook.logo = new Image();
@@ -270,9 +247,9 @@ function fullScreen(e) {
 function var_(name, value) {
   window[name] = value ?? null;
 }
-function img(id, res) {
+function img(id) {
   for (let i = 0; i < images.length; i++) {
-    if (images[i].id == id) return images[i][res];
+    if (images[i].id == id) return images[i].img;
   }
 }
 function render() {
