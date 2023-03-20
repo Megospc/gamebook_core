@@ -190,7 +190,7 @@ function wheel(e) {
     e = e ?? window.event;
     let del = e.deltaY || e.detail || e.wheelDelta;
     if (del < 0 && cameraY > 0) cameraY = Math.max(cameraY-10, 0);
-    if (del < 0 && cameraY < 0) cameraY = Math.min(cameraY+10, maxY);
+    if (del > 0 && cameraY < maxY) cameraY = Math.min(cameraY+10, maxY);
   }
 }
 function allload() {
