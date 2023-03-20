@@ -2,7 +2,7 @@ const devices = new RegExp('Android|webOS|iPhone|iPad|iPod|BlackBerry|BB|PlayBoo
 const mobile = devices.test(navigator.userAgent);
 const textlen = 50, optlen = 50, fpsTime = 10;
 var gamesrc = "";
-var sounds = [];
+var sounds = [], images = [];
 var cw, ch, cc, cx, cy;
 var lastTime = 0;
 var canvas = document.getElementById('canvas');
@@ -73,6 +73,36 @@ function load() {
       sounds.push({ sound: new Audio(gamesrc+assets[i].src), id: assets[i].id });
       sounds[sounds.length-1].sound.addEventListener('loadeddata', loaded);
       needload++;
+    }
+    if (assets[i].type == "image") {
+      needload += assets[i].resolutions.length+1;
+      images.push({ img: new Image(), arr: [], res: assets[i].resolutions, id: assets[i].id });
+      images[images.length-1].img.src = assets[i].src;
+      images[images.length-1].img.obj = images[images.length-1];
+      images[images.length-1].img.onload = function() {
+        let e = document.createElement('canvas');
+        let c = e.getContext('2d');
+        e.width = this.width;
+        e.height = this.height;
+        this.crossOrigin = "Anonymous";
+        c.drawImage(this, 0, 0);
+        let data = c.getImageData(0, 0, e.width, e.height);
+        let d = new Uint32Array(data.data);
+        loaded();
+        for (let i = 0; i < this.obj.res.length; i++) {
+          let res = { width: X(this.obj.res[i].width), height: Y(this.obj.res[i].height) };
+          let img = new ImageData(res.width, res.height);
+          let dat = new Uint32Array(img.data);
+          for (let y = 0; y < res.height; y++) {
+            for (let x = 0; x < res.width; x++) {
+              let j = Math.floor(y/res.height*this.height)*res.width+Math.floor(x/res.width*res.width);
+              dat[y*res.width+x] = d[j];
+            }
+          }
+          this.obj.arr[i] = img;
+          loaded();
+        }
+      };
     }
   }
   gamebook.logo = new Image();
@@ -198,7 +228,7 @@ function allload() {
 function start() {
   options.onstart();
 }
-function room(id) {
+function room(id, ...args) {
   text = [new Array(textlen).fill('')];
   opts = [];
   cursor = { x: 0, y: 0 };
@@ -207,7 +237,7 @@ function room(id) {
   let i;
   for (i = 0; i < rooms.length; i++) {
     if (rooms[i].id == id) {
-      rooms[i].f();
+      rooms[i].f(...args);
       return;
     }
   }
@@ -239,6 +269,11 @@ function fullScreen(e) {
 }
 function var_(name, value) {
   window[name] = value ?? null;
+}
+function img(id, res) {
+  for (let i = 0; i < images.length; i++) {
+    if (images[i].id == id) return images[i][res];
+  }
 }
 function render() {
   clear();
@@ -293,7 +328,7 @@ function render() {
   }
   ctx.fillStyle = style.first;
   ctx.font = `${X(24)}px font`;
-  for (let y = Math.floor(cameraY/30); y < Math.min(text.length, Math.ceil((cameraY+450)/30)); y++) {
+  for (let y = Math.max(Math.floor(cameraY/30)-1, 0); y < Math.min(text.length, Math.ceil((cameraY+450)/30)); y++) {
     for (let x = 0; x < text[y].length; x++) {
       ctx.fillText(text[y][x], X(20+(x*16)), Y(50+(y*30)-cameraY));
     }
@@ -308,6 +343,7 @@ function render() {
     }
     y += opt.text.length*30;
   }
+  if (options.render) options.render();
   lastTime = performance.now();
 }
 window.onload = load;
