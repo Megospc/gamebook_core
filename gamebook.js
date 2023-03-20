@@ -189,8 +189,9 @@ function wheel(e) {
   if (maxY > 450) {
     e = e ?? window.event;
     let del = e.deltaY || e.detail || e.wheelDelta;
-    if (del < 0 && cameraY > 0) cameraY = Math.max(cameraY-10, 0);
-    if (del > 0 && cameraY < maxY) cameraY = Math.min(cameraY+10, maxY);
+    console.log(del);
+    if (del < 0 && cameraY > 0) cameraY = Math.max(cameraY-20, 0);
+    if (del > 0 && cameraY < maxY) cameraY = Math.min(cameraY+20, maxY);
   }
 }
 function allload() {
