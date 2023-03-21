@@ -1,20 +1,32 @@
 const devices = new RegExp('Android|webOS|iPhone|iPad|iPod|BlackBerry|BB|PlayBook|IEMobile|Windows Phone|Kindle|Silk|Opera Mini', "i");
 const mobile = devices.test(navigator.userAgent);
 const textlen = 50, optlen = 50, fpsTime = 10;
-var gamesrc = "";
-var sounds = [], images = [];
+var gamesrc = "", roomid = null;
+var sounds = [], images = [], variables = [];
 var cw, ch, cc, cx, cy;
 var lastTime = 0;
 var canvas = document.getElementById('canvas');
-var ctx = canvas.getContext('2d');
+if (canvas.getContext) var ctx = canvas.getContext('2d');
+else window.close();
 var frame = 0, loading = 0, needload = 3, started = false;
 var options = obj.options, rooms = obj.rooms, assets = obj.assets ?? [], style = obj.style ?? { background: "#803000", first: "#ffc070", second: "#ff8050", third: "#502000", backgroundbody: "#502000" };
-var text = [new Array(textlen).fill('')], opts = [], printing = [], cursor = { x: 0, y: 0 }, gamebook = {};
+var text = [new Array(textlen).fill('')], opts = [], printing = [], cursor = { x: 0, y: 0 }, gamebook = { restore: false };
 var cameraY = 0, maxY = 450, clickType = "";
 document.getElementById('title').innerHTML = `GAMEBOOK - ${obj.name ?? "без имени"}`;
 for (let i = location.href.length-1, b = false; i >= 0; i--) {
   if (!b && location.href[i] == "/") b = true;
   if (b) gamesrc = location.href[i] + gamesrc;
+}
+if (localStorage) {
+  let json = localStorage.getItem(`gamebook_save_${location.href}`);
+  if (json) {
+    try {
+      let o = JSON.parse(json);
+      if (o.room && o.date && o.variables) {
+        gamebook.restore = o;
+      }
+    } catch {}
+  }
 }
 function resize() {
   w = window.innerWidth;
@@ -59,7 +71,7 @@ function resize() {
 }
 resize();
 addEventListener('resize', resize);
-function clear() {
+function clearrender() {
   ctx.fillStyle = style.background;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
@@ -103,7 +115,7 @@ function sound(id) {
   }
 }
 function loadrender() {
-  clear();
+  clearrender();
   ctx.fillStyle = style.first;
   ctx.fillRect(X(400), Y(200), X(100), Y(30));
   ctx.fillStyle = style.background;
@@ -112,7 +124,7 @@ function loadrender() {
   ctx.fillRect(X(404), Y(204), X(loading/needload*92), Y(22));
 }
 function startrender() {
-  clear();
+  clearrender();
   ctx.fillStyle = style.first;
   ctx.font = `${X(24)}px font`;
   ctx.fillText("Загрузка завершена...", X(350), Y(400));
@@ -134,6 +146,7 @@ function loaded() {
 }
 function touchend() {
   clickType = "";
+  if (options.touchend) options.touchend();
 }
 function touch() {
   touchstart();
@@ -146,6 +159,7 @@ function touchmove(e) {
   if (clickType == "camera" && y > 30 && y < 420) {
     cameraY = (y-30)/390*maxY;
   }
+  if (options.touchmove) options.touchmove();
 }
 function touchstart(e) {
   let c = cw/900;
@@ -183,13 +197,13 @@ function touchstart(e) {
     }
     return;
   }
-  if (x > 790 && y < 20) fullScreen(document.documentElement);
+  if (x > 790 && y < 20) fullscreen(document.documentElement);
+  if (options.touchstart) options.touchstart();
 }
 function wheel(e) {
   if (maxY > 450) {
     e = e ?? window.event;
     let del = e.deltaY || e.detail || e.wheelDelta;
-    console.log(del);
     if (del < 0 && cameraY > 0) cameraY = Math.max(cameraY-20, 0);
     if (del > 0 && cameraY < maxY) cameraY = Math.min(cameraY+20, maxY);
   }
@@ -231,16 +245,45 @@ function eventListener(e, f) {
 function start() {
   options.onstart();
 }
-function room(id, ...args) {
+function clear() {
   text = [new Array(textlen).fill('')];
   opts = [];
   cursor = { x: 0, y: 0 };
   printing = [];
   cameraY = 0;
+}
+function save() {
+  if (localStorage) {
+    let o = {
+      room: roomid,
+      date: Date.now(),
+      variables: []
+    };
+    for (let i = 0; i < variables.length; i++) o.variables.push({ name: variables[i], value: window[variables[i]] });
+    localStorage.setItem(`gamebook_save_${location.href}`, JSON.stringify(o));
+  }
+}
+function restore() {
+  if (gamebook.restore) {
+    clearVariables();
+    for (let i = 0; i < gamebook.restore.variables.length; i++) {
+      var_(gamebook.restore.variables[i].name, gamebook.restore.variables[i].value);
+    }
+    room(gamebook.restore.room);
+  }
+}
+function clearVariables() {;
+  for (let i = 0; i < variables.length; i++) delete window[variables[i]];
+  variables = [];
+}
+function room(id, ...args) {
+  clear();
   let i;
   for (i = 0; i < rooms.length; i++) {
     if (rooms[i].id == id) {
       rooms[i].f(...args);
+      roomid = id;
+      if (options.room) options.room();
       return;
     }
   }
@@ -261,17 +304,20 @@ function opt(txt, fun) {
 function vibrate(len) {
   if (navigator.vibrate) navigator.vibrate(len);
 }
-function fullScreen(e) {
-  if(e.requestFullscreen) {
-    e.requestFullscreen();
-  } else if(e.webkitrequestFullscreen) {
-    e.webkitRequestFullscreen();
-  } else if(e.mozRequestFullscreen) {
-    e.mozRequestFullScreen();
+function fullscreen(e) {
+  if(e.requestfullscreen) {
+    e.requestfullscreen();
+  } else if(e.webkitrequestfullscreen) {
+    e.webkitRequestfullscreen();
+  } else if(e.mozRequestfullscreen) {
+    e.mozRequestfullscreen();
   }
 }
 function var_(name, value) {
-  window[name] = value ?? null;
+  if (!variables.includes(name)) {
+    window[name] = value ?? null;
+    variables.push(name);
+  }
 }
 function img(id) {
   for (let i = 0; i < images.length; i++) {
@@ -279,7 +325,7 @@ function img(id) {
   }
 }
 function render() {
-  clear();
+  clearrender();
   document.body.style.backgroundColor = style.backgroundbody;
   if (options.fullscreen) {
     ctx.font = `${X(18)}px font`;
