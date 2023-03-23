@@ -24,8 +24,10 @@ if (localStorage) {
       let o = JSON.parse(json);
       if (o.room && o.date && o.variables) {
         gamebook.restore = o;
-      }
-    } catch {}
+      } else throw '';
+    } catch {
+      console.error(`GamebookCore: 'gamebook.restore' returned invalid JSON`);
+    }
   }
 }
 function resize() {
@@ -81,24 +83,29 @@ function load() {
     gamebook.music.addEventListener('loadeddata', loaded);
   } else needload--;
   for (let i = 0; i < assets.length; i++) {
-    if (assets[i].type == "sound") {
-      sounds.push({ sound: new Audio(gamesrc+assets[i].src), id: assets[i].id });
-      sounds[sounds.length-1].sound.addEventListener('loadeddata', loaded);
-      needload++;
-    }
-    if (assets[i].type == "image") {
-      needload++;
-      images.push({ img: new Image(), id: assets[i].id });
-      images[images.length-1].img.src = assets[i].src;
-      images[images.length-1].img.obj = images[images.length-1];
-      images[images.length-1].img.onload = loaded;
+    switch(assets[i].type) {
+      case "sound":
+        sounds.push({ sound: new Audio(gamesrc+assets[i].src), id: assets[i].id });
+        sounds[sounds.length-1].sound.addEventListener('loadeddata', loaded);
+        needload++;
+        break;
+      case "image":
+        needload++;
+        images.push({ img: new Image(), id: assets[i].id });
+        images[images.length-1].img.src = assets[i].src;
+        images[images.length-1].img.obj = images[images.length-1];
+        images[images.length-1].img.onload = loaded;
+        break;
+      default:
+        console.warn(`GamebookCore: asset with index ${i} has invalid type ('${assets[i].type}')`);
+        break;
     }
   }
   gamebook.logo = new Image();
   gamebook.logo.src = 'https://megospc.github.io/gamebook_core/assets/logo.svg';
   gamebook.logo.onload = loaded;
   gamebook.style = style;
-  let font = new FontFace('font', 'url(https://megospc.github.io/gamebook_core/assets/font.ttf)');
+  let font = new FontFace('font', `url(${options.font ?? 'https://megospc.github.io/gamebook_core/assets/font.ttf'})`);
   font.load().then((font) => {
     document.fonts.add(font);
     loaded();
@@ -112,6 +119,7 @@ function sound(id) {
         return;
       }
     }
+    console.warn(`GamebookCore: Sound with id '${id}' is not declared in 'assets' `);
   }
 }
 function loadrender() {
@@ -147,10 +155,6 @@ function loaded() {
 function touchend() {
   clickType = "";
   if (options.touchend) options.touchend();
-}
-function touch() {
-  touchstart();
-  touchmove();
 }
 function touchmove(e) {
   let c = cw/900;
@@ -261,7 +265,7 @@ function save() {
     };
     for (let i = 0; i < variables.length; i++) o.variables.push({ name: variables[i], value: window[variables[i]] });
     localStorage.setItem(`gamebook_save_${location.href}`, JSON.stringify(o));
-  }
+  } else console.warn(`GamebookCore: Can't to save progress`);
 }
 function restore() {
   if (gamebook.restore) {
@@ -270,23 +274,24 @@ function restore() {
       var_(gamebook.restore.variables[i].name, gamebook.restore.variables[i].value);
     }
     room(gamebook.restore.room);
-  }
+  } else console.warn(`GamebookCore: Can't to restore progress`);
 }
 function clearVariables() {;
   for (let i = 0; i < variables.length; i++) delete window[variables[i]];
   variables = [];
 }
 function room(id, ...args) {
-  clear();
   let i;
   for (i = 0; i < rooms.length; i++) {
     if (rooms[i].id == id) {
+      clear();
       rooms[i].f(...args);
       roomid = id;
       if (options.room) options.room();
       return;
     }
   }
+  console.error(`GamebookCore: Room with id '${id}' is not declared in 'rooms'`);
 }
 function println(txt) {
   for (let i = 0; i < txt.length; i++) {
@@ -303,6 +308,7 @@ function opt(txt, fun) {
 }
 function vibrate(len) {
   if (navigator.vibrate) navigator.vibrate(len);
+  else console.warn(`GamebookCore: Can't to vibrate`);
 }
 function fullscreen(e) {
   if(e.requestfullscreen) {
@@ -317,12 +323,13 @@ function var_(name, value) {
   if (!variables.includes(name)) {
     window[name] = value ?? null;
     variables.push(name);
-  }
+  } else console.error(`GamebookCore: variable with name '${name}' has already declared`);
 }
 function img(id) {
   for (let i = 0; i < images.length; i++) {
     if (images[i].id == id) return images[i].img;
   }
+  console.error(`GamebookCore: image with id '${id}' is not declared in 'assets'`);
 }
 function render() {
   clearrender();
