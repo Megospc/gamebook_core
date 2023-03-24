@@ -12,7 +12,7 @@ var frame = 0, loading = 0, needload = 3, started = false;
 var options = obj.options, rooms = obj.rooms, assets = obj.assets ?? [], style = obj.style ?? { background: "#803000", first: "#ffc070", second: "#ff8050", third: "#502000", backgroundbody: "#502000" };
 var text = [new Array(textlen).fill('')], opts = [], printing = [], cursor = { x: 0, y: 0 }, gamebook = { restore: false };
 var cameraY = 0, maxY = 450, clickType = "";
-document.getElementById('title').innerHTML = `GAMEBOOK - ${obj.name ?? "без имени"}`;
+document.getElementById('title').innerHTML = `GAMEBOOK — ${obj.name ?? "без имени"}`;
 for (let i = location.href.length-1, b = false; i >= 0; i--) {
   if (!b && location.href[i] == "/") b = true;
   if (b) gamesrc = location.href[i] + gamesrc;
@@ -154,7 +154,7 @@ function loaded() {
 }
 function touchend() {
   clickType = "";
-  if (options.touchend) options.touchend();
+  if (options.touchend) options.touchend(x, y);
 }
 function touchmove(e) {
   let c = cw/900;
@@ -163,7 +163,7 @@ function touchmove(e) {
   if (clickType == "camera" && y > 30 && y < 420) {
     cameraY = (y-30)/390*maxY;
   }
-  if (options.touchmove) options.touchmove();
+  if (options.touchmove) options.touchmove(x, y);
 }
 function touchstart(e) {
   let c = cw/900;
@@ -202,7 +202,7 @@ function touchstart(e) {
     return;
   }
   if (x > 790 && y < 20) fullscreen(document.documentElement);
-  if (options.touchstart) options.touchstart();
+  if (options.touchstart) options.touchstart(x, y);
 }
 function wheel(e) {
   if (maxY > 450) {
@@ -293,7 +293,8 @@ function room(id, ...args) {
   }
   console.error(`GamebookCore: Room with id '${id}' is not declared in 'rooms'`);
 }
-function println(txt) {
+function println(a) {
+  let txt = `${a}`;
   for (let i = 0; i < txt.length; i++) {
     printing.push(txt[i]);
   }
