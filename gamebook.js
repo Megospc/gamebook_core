@@ -1,7 +1,7 @@
 const devices = new RegExp('Android|webOS|iPhone|iPad|iPod|BlackBerry|BB|PlayBook|IEMobile|Windows Phone|Kindle|Silk|Opera Mini', "i");
 const mobile = devices.test(navigator.userAgent);
 const textlen = 50, optlen = 50, fpsTime = 10;
-var gamesrc = "", roomid = null;
+var gamesrc = "", roomid = null, roomargs = [];
 var sounds = [], images = [], variables = [];
 var cw, ch, cc, cx, cy;
 var lastTime = 0;
@@ -22,7 +22,7 @@ if (localStorage) {
   if (json) {
     try {
       let o = JSON.parse(json);
-      if (o.room && o.date && o.variables) {
+      if (o.room && o.date && o.variables && o.args) {
         gamebook.restore = o;
       } else throw '';
     } catch {
@@ -260,6 +260,7 @@ function save() {
   if (localStorage) {
     let o = {
       room: roomid,
+      args: roomargs,
       date: Date.now(),
       variables: []
     };
@@ -273,7 +274,7 @@ function restore() {
     for (let i = 0; i < gamebook.restore.variables.length; i++) {
       var_(gamebook.restore.variables[i].name, gamebook.restore.variables[i].value);
     }
-    room(gamebook.restore.room);
+    room(gamebook.restore.room, ...gamebook.restore.args);
   } else console.warn(`GamebookCore: Can't to restore progress`);
 }
 function clearVariables() {;
@@ -287,6 +288,7 @@ function room(id, ...args) {
       clear();
       rooms[i].f(...args);
       roomid = id;
+      roomargs = args;
       if (options.room) options.room();
       return;
     }
