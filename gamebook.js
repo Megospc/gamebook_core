@@ -22,7 +22,7 @@ if (localStorage) {
   if (json) {
     try {
       let o = JSON.parse(json);
-      if (o.room && o.date && o.variables && o.args) {
+      if (o.room && o.date && o.variables && o.args && o.style) {
         gamebook.restore = o;
       } else throw '';
     } catch {
@@ -262,7 +262,8 @@ function save() {
       room: roomid,
       args: roomargs,
       date: Date.now(),
-      variables: []
+      variables: [],
+      style: style
     };
     for (let i = 0; i < variables.length; i++) o.variables.push({ name: variables[i], value: window[variables[i]] });
     localStorage.setItem(`gamebook_save_${location.href}`, JSON.stringify(o));
@@ -274,6 +275,7 @@ function restore() {
     for (let i = 0; i < gamebook.restore.variables.length; i++) {
       var_(gamebook.restore.variables[i].name, gamebook.restore.variables[i].value);
     }
+    style = gamebook.restore.style;
     room(gamebook.restore.room, ...gamebook.restore.args);
   } else console.warn(`GamebookCore: Can't to restore progress`);
 }
