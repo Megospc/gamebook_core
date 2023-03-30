@@ -1,7 +1,7 @@
 const devices = new RegExp('Android|webOS|iPhone|iPad|iPod|BlackBerry|BB|PlayBook|IEMobile|Windows Phone|Kindle|Silk|Opera Mini', "i");
 const mobile = devices.test(navigator.userAgent);
 const textlen = 50, optlen = 50, fpsTime = 10;
-var gamesrc = "", roomid = null, roomargs = [];
+var gamesrc = "", roomid = null, roomindex = null, roomargs = [];
 var sounds = [], images = [], variables = [];
 var cw, ch, cc, cx, cy;
 var lastTime = 0;
@@ -284,12 +284,12 @@ function clearVariables() {;
   variables = [];
 }
 function room(id, ...args) {
-  let i;
-  for (i = 0; i < rooms.length; i++) {
+  for (let i = 0; i < rooms.length; i++) {
     if (rooms[i].id == id) {
       clear();
       rooms[i].f(...args);
       roomid = id;
+      roomindex = i;
       roomargs = args;
       if (options.room) options.room();
       return;
