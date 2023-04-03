@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="user-scalable=no">
+  <link rel="icon" href="https://megospc.github.io/gamebook_core/assets/icon.svg">
+  <title id="title">GAMEBOOK</title>
+</head>
+<body style="overflow: hidden;">
+  <canvas id="canvas" style="position: absolute;"></canvas>
+</body>
+</html>
+<script src="script.js"></script>
+<script src="https://megospc.github.io/gamebook_core/gamebook_1.0.0.js" defer></script>
