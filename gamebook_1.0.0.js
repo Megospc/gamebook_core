@@ -1,7 +1,7 @@
 var gamebook = {
   restore: false,
   started: false,
-  version: "1.0.1",
+  version: "1.0.2",
   canvas: document.getElementById('canvas'),
   base: 'https://megospc.github.io/gamebook_core/assets/',
   load: {
@@ -306,7 +306,7 @@ function save() {
       args: gamebook.room.args,
       date: Date.now(),
       variables: [],
-      style: gamebook.style,
+      style: obj.style,
       corever: gamebook.version,
       version: obj.version
     };
