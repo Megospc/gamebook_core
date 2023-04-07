@@ -1,7 +1,7 @@
 var gamebook = {
   restore: false,
   started: false,
-  version: "1.0.0",
+  version: "1.0.1",
   canvas: document.getElementById('canvas'),
   base: 'https://megospc.github.io/gamebook_core/assets/',
   load: {
@@ -320,7 +320,7 @@ function restore() {
     for (let i = 0; i < gamebook.restore.variables.length; i++) {
       variable(gamebook.restore.variables[i].name, gamebook.restore.variables[i].value);
     }
-    gamebook.style = gamebook.restore.style;
+    obj.style = gamebook.restore.style;
     room(gamebook.restore.room, ...gamebook.restore.args);
   } else console.warn(`GamebookCore: Can't to restore progress`);
 }
