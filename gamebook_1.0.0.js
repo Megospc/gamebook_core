@@ -1,7 +1,7 @@
 var gamebook = {
   restore: false,
   started: false,
-  version: "1.0.2",
+  version: "1.0.3",
   canvas: document.getElementById('canvas'),
   base: 'https://megospc.github.io/gamebook_core/assets/',
   load: {
@@ -176,7 +176,7 @@ gamebook.screenprops.resize = function() {
   }
 }
 gamebook.screenprops.resize();
-document.addEventListener('resize', gamebook.screenprops.resize);
+addEventListener('resize', () => gamebook.screenprops.resize());
 function sound(id) {
   if (!obj.options.nosounds) {
     for (let i = 0; i < gamebook.res.sounds.length; i++) {
