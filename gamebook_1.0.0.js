@@ -1,7 +1,8 @@
 var gamebook = {
   restore: false,
   started: false,
-  version: "1.0.3",
+  version: "1.1.4",
+  sounds: !obj.options.nosounds,
   canvas: document.getElementById('canvas'),
   base: 'https://megospc.github.io/gamebook_core/assets/',
   load: {
@@ -19,7 +20,7 @@ var gamebook = {
     variables: []
   },
   mobtest: {
-    devices: new RegExp('Android|webOS|iPhone|iPad|iPod|BlackBerry|BB|PlayBook|IEgamebook.mobtest.mobile|Windows Phone|Kindle|Silk|Opera Mini', "i"),
+    devices: new RegExp('Android|webOS|iPhone|iPad|iPod|BlackBerry|BB|PlayBook|IEMobile|Windows Phone|Kindle|Silk|Opera Mini', "i"),
   },
   screenprops: {
     textlen: 50,
@@ -76,7 +77,7 @@ if (localStorage) {
 gamebook.clearrender = function() {
   gamebook.ctx.fillStyle = obj.style.background;
   gamebook.ctx.fillRect(0, 0, gamebook.canvas.width, gamebook.canvas.height);
-}
+};
 gamebook.special.loadrender = function() {
   gamebook.clearrender();
   gamebook.ctx.fillStyle = obj.style.first;
@@ -85,7 +86,7 @@ gamebook.special.loadrender = function() {
   gamebook.ctx.fillRect(X(402), Y(202), X(96), Y(26));
   gamebook.ctx.fillStyle = obj.style.first;
   gamebook.ctx.fillRect(X(404), Y(204), X(gamebook.load.loading/gamebook.load.needload*92), Y(22));
-}
+};
 gamebook.special.startrender = function() {
   gamebook.clearrender();
   gamebook.ctx.fillStyle = obj.style.first;
@@ -95,17 +96,19 @@ gamebook.special.startrender = function() {
   gamebook.ctx.font = `${X(36)}px font`;
   gamebook.ctx.fillText("Кликните чтобы продолжить", X(240), Y(360));
   gamebook.ctx.drawImage(gamebook.logo, X(280), Y(50), X(300), Y(180))
-}
+};
 gamebook.load.load = function() {
-  if (obj.options.music && !obj.options.nosounds) {
+  if (obj.options.music) {
     gamebook.music = new Audio(obj.options.music);
     gamebook.music.addEventListener('loadeddata', gamebook.special.loaded);
+    gamebook.music.volume = gamebook.sounds ? 1:0;
   } else gamebook.load.needload--;
   for (let i = 0; i < obj.assets.length; i++) {
     switch(obj.assets[i].type) {
       case "sound":
         gamebook.res.sounds.push({ sound: new Audio(gamebook.screenprops.src+obj.assets[i].src), id: obj.assets[i].id });
         gamebook.res.sounds[gamebook.res.sounds.length-1].sound.addEventListener('loadeddata', gamebook.special.loaded);
+        gamebook.res.sounds[gamebook.res.sounds.length-1].sound.volume = gamebook.sounds ? 1:0;
         gamebook.load.needload++;
         break;
       case "image":
@@ -129,7 +132,7 @@ gamebook.load.load = function() {
     document.fonts.add(font);
     gamebook.special.loaded();
   });
-}
+};
 gamebook.special.clearvariables = function() {
   for (let i = 0; i < gamebook.res.variables.length; i++) delete window[gamebook.res.variables[i]];
     gamebook.res.variables = [];
@@ -174,11 +177,11 @@ gamebook.screenprops.resize = function() {
     if (gamebook.load.loading == gamebook.load.needload) gamebook.special.startrender();
     else gamebook.special.loadrender();
   }
-}
+};
 gamebook.screenprops.resize();
 addEventListener('resize', () => gamebook.screenprops.resize());
 function sound(id) {
-  if (!obj.options.nosounds) {
+  if (gamebook.sounds) {
     for (let i = 0; i < gamebook.res.sounds.length; i++) {
       if (gamebook.res.sounds[i].id == id) {
         gamebook.res.sounds[i].sound.play();
@@ -198,11 +201,11 @@ gamebook.special.loaded = function() {
   gamebook.load.loading++;
   gamebook.special.loadrender();
   if (gamebook.load.loading == gamebook.load.needload) gamebook.special.allload();
-}
+};
 gamebook.mouse.touchend = function() {
   gamebook.mouse.type = null;
   if (obj.options.touchend) obj.options.touchend(x, y);
-}
+};
 gamebook.mouse.touchmove = function(e) {
   let c = gamebook.screenprops.canvas.w/900;
   let x = ((gamebook.mobtest.mobile ? e.touches[0].pageX:e.pageX)-gamebook.screenprops.canvas.x)/c;
@@ -211,7 +214,7 @@ gamebook.mouse.touchmove = function(e) {
     gamebook.special.cy = (y-30)/390*gamebook.special.my;
   }
   if (obj.options.touchmove) obj.options.touchmove(x, y);
-}
+};
 gamebook.mouse.touchstart = function(e) {
   let c = gamebook.screenprops.canvas.w/900;
   let x = ((gamebook.mobtest.mobile ? e.touches[0].pageX:e.pageX)-gamebook.screenprops.canvas.x)/c;
@@ -248,9 +251,14 @@ gamebook.mouse.touchstart = function(e) {
     }
     return;
   }
+  if (x < 50 && y > 420) {
+    gamebook.sounds = !gamebook.sounds;
+    if (gamebook.sounds) gamebook.music.play();
+    else gamebook.music.pause();
+  }
   if (x > 790 && y < 20) fullscreen(document.documentElement);
   if (obj.options.touchstart) obj.options.touchstart(x, y);
-}
+};
 gamebook.mouse.wheel = function(e) {
   if (gamebook.special.my > 450) {
     e = e ?? window.event;
@@ -258,7 +266,7 @@ gamebook.mouse.wheel = function(e) {
     if (del < 0 && gamebook.special.cy > 0) gamebook.special.cy = Math.max(gamebook.special.cy-20, 0);
     if (del > 0 && gamebook.special.cy < gamebook.special.my) gamebook.special.cy = Math.min(gamebook.special.cy+20, gamebook.special.my);
   }
-}
+};
 gamebook.special.allload = function() {
   gamebook.special.startrender();
   document.addEventListener('click', () => {
@@ -286,12 +294,12 @@ gamebook.special.allload = function() {
     }
     gamebook.special.start();
   }, { once: true });
-}
+};
 gamebook.special.start = function() {
   gamebook.special.interval = setInterval(() => { if (performance.now() >= gamebook.special.lasttime+gamebook.screenprops.fpstime) gamebook.render(); }, 1);
   gamebook.started = true;
   obj.options.onstart();
-}
+};
 function clear() {
   gamebook.text = [new Array(gamebook.screenprops.textlen).fill('')];
   gamebook.opts = [];
@@ -355,7 +363,7 @@ function opt(txt, fun) {
 gamebook.vibrate = function(len) {
   if (navigator.vibrate) navigator.vibrate(len);
   else console.warn(`GamebookCore: Can't to vibrate`);
-}
+};
 gamebook.fullscreen = function(e) {
   if(e.requestfullscreen) {
     e.requestfullscreen();
@@ -364,7 +372,7 @@ gamebook.fullscreen = function(e) {
   } else if(e.mozRequestfullscreen) {
     e.mozRequestfullscreen();
   }
-}
+};
 function variable(name, value) {
   if (!gamebook.res.variables.includes(name) && !window[name]) {
     window[name] = value ?? null;
@@ -377,6 +385,7 @@ function img(id) {
   }
   console.error(`GamebookCore: image with id '${id}' is not declared in 'assets'`);
 }
+gamebook.special.degtorad = (deg) => deg/180*Math.PI;
 gamebook.render = function() {
   gamebook.clearrender();
   document.body.style.backgroundColor = obj.style.backgroundbody;
@@ -435,6 +444,32 @@ gamebook.render = function() {
       gamebook.ctx.fillText(gamebook.text[y][x], X(20+(x*16)), Y(50+(y*30)-gamebook.special.cy));
     }
   }
+  gamebook.ctx.fillRect(X(17), Y(420), X(8), Y(10));
+  gamebook.ctx.beginPath();
+  gamebook.ctx.moveTo(X(25), Y(420));
+  gamebook.ctx.lineTo(X(30), Y(415));
+  gamebook.ctx.lineTo(X(30), Y(435));
+  gamebook.ctx.lineTo(X(25), Y(430));
+  gamebook.ctx.closePath();
+  gamebook.ctx.fill();
+  gamebook.ctx.strokeStyle = obj.style.first;
+  gamebook.ctx.lineCap = "round";
+  gamebook.ctx.lineWidth = X(3);
+  if (gamebook.sounds) {
+    gamebook.ctx.beginPath();
+    gamebook.ctx.arc(X(30), Y(425), X(5), gamebook.special.degtorad(305), gamebook.special.degtorad(45));
+    gamebook.ctx.stroke();
+    gamebook.ctx.beginPath();
+    gamebook.ctx.arc(X(35), Y(425), X(7), gamebook.special.degtorad(305), gamebook.special.degtorad(45));
+    gamebook.ctx.stroke();
+  } else {
+    gamebook.ctx.beginPath();
+    gamebook.ctx.moveTo(X(36), Y(427));
+    gamebook.ctx.lineTo(X(40), Y(423));
+    gamebook.ctx.moveTo(X(36), Y(423));
+    gamebook.ctx.lineTo(X(40), Y(427));
+    gamebook.ctx.stroke();
+  }
   gamebook.ctx.fillStyle = obj.style.second;
   for (let i = 0, y = 0; i < gamebook.opts.length; i++) {
     let opt = gamebook.opts[i];
@@ -447,6 +482,6 @@ gamebook.render = function() {
   }
   if (obj.options.render) obj.options.render();
   gamebook.special.lasttime = performance.now();
-}
+};
 window.onload = gamebook.load.load;
 document.body.style.backgroundColor = obj.style.backgroundbody;
